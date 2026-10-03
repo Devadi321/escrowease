@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}{{ deal['title'] }} · EscrowEase{% endblock %}
+{% block content %}
+
+<section class="card">
+  <div class="deal-head">
+    <div>
+      <h2>{{ deal['title'] }}</h2>
+      <p class="muted">{{ deal['client_email'] }} → {{ deal['freelancer_email'] }}</p>
+    </div>
+    <div class="deal-right">
+      <div class="bignum">{{ "%.2f"|format(deal['amount']) }} {{ deal['currency'] }}</div>
+      <span class="status s-{{ deal['status'] }}">{{ status_labels[deal['status']] }}</span>
+    </div>
+  </div>
+
+  <h4>The brief</h4>
+  <p class="brief">{{ deal['brief'] }}</p>
+
+  {% if deal['paypal_order_id'] %}
+  <p class="muted small">PayPal order: <code>{{ deal['paypal_order_id'] }}</code>
+    {% if deal['paypal_auth_id'] %}<br>Authorization: <code>{{ deal['paypal_auth_id'] }}</code>{% endif %}</p>
+  {% endif %}
+
+  <!-- status timeline -->
+  <div class="timeline">
+    {% set stage = {'DRAFT':0,'FUNDED':1,'DELIVERED':2,'APPROVED':3,'CHANGES_REQUESTED':3,'RELEASED':4,'REFUNDED':4}[deal['status']] %}
+    {% for label in ['Draft','Funded','Delivered','Verdict','Settled'] %}
+      <div class="tstep {{ 'done' if loop.index0 <= stage else '' }} {{ 'now' if loop.index0 == stage else '' }}">
+        <div class="dot"></div><div class="tlabel">{{ label }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- contextual actions -->
+<section class="card">
+  <h3>Actions</h3>
+
+  {% if deal['status'] == 'DRAFT' %}
+    <p class="muted">The client funds the escrow — PayPal holds the {{ "%.2f"|format(deal['amount']) }} {{ deal['currency'] }} without charging it yet.</p>
+    <form method="post" action="{{ url_for('fund', deal_id=deal['id']) }}">
+      <button class="btn primary" type="submit" {% if not paypal_configured %}disabled title="Configure sandbox credentials first"{% endif %}>💰 Fund escrow via PayPal</button>
+    </form>
+    {% if not paypal_configured %}
+      <p class="warn-text">⚠️ Sandbox credentials not configured — see README to connect PayPal.</p>
+    {% endif %}
+  {% endif %}
+
+  {% if deal['status'] in ('FUNDED','CHANGES_REQUESTED') %}
+    <p class="muted">Freelancer: submit what you built.</p>
+    <form method="post" action="{{ url_for('deliver', deal_id=deal['id']) }}" class="form">
+      <label>What did you deliver?
+        <textarea name="description" required rows="4" placeholder="Describe the finished work in detail…"></textarea>
+      </label>
+      <label>Link to the work (optional)
+        <input name="link" placeholder="https://…">
+      </label>
+      <button class="btn primary" type="submit">📦 Submit deliverable</button>
+    </form>
+  {% endif %}
+
+  {% if deal['status'] == 'DELIVERED' %}
+    <p class="muted">Ask the AI referee to compare the latest deliverable against the brief.</p>
+    <form method="post" action="{{ url_for('ai_check', deal_id=deal['id']) }}">
+      <button class="btn primary" type="submit">🤖 Run AI check</button>
+    </form>
+  {% endif %}
+
+  {% if deal['status'] == 'APPROVED' %}
+    <p class="muted">AI approved the work. Client: release the payment to the freelancer — or refund instead.</p>
+    <div class="btn-row">
+      <form method="post" action="{{ url_for('release', deal_id=deal['id']) }}">
+        <button class="btn good" type="submit">✅ Release payment</button>
+      </form>
+      <form method="post" action="{{ url_for('refund', deal_id=deal['id']) }}">
+        <button class="btn danger" type="submit">↩ Refund client</button>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if deal['status'] in ('FUNDED','DELIVERED','CHANGES_REQUESTED') %}
+    <div class="btn-row" style="margin-top:12px">
+      <form method="post" action="{{ url_for('refund', deal_id=deal['id']) }}">
+        <button class="btn danger" type="submit">↩ Refund client (void escrow)</button>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if deal['status'] == 'RELEASED' %}
+    <p class="done-text">✅ Payment released to the freelancer. Deal complete.</p>
+  {% endif %}
+  {% if deal['status'] == 'REFUNDED' %}
+    <p class="done-text">↩ Escrow voided — funds released back to the client. Deal closed.</p>
+  {% endif %}
+</section>
+
+<!-- AI verdict -->
+{% if verdict %}
+<section class="card verdict {{ 'approve' if verdict['decision']=='APPROVE' else 'changes' }}">
+  <h3>🤖 AI referee verdict
+    <span class="badge {{ 'approve' if verdict['decision']=='APPROVE' else 'changes' }}">
+      {{ 'APPROVE — release it' if verdict['decision']=='APPROVE' else 'REQUEST CHANGES' }}
+    </span>
+  </h3>
+  <div class="conf-row">
+    <div class="bar"><div style="width:{{ verdict['confidence'] }}%"></div></div>
+    <span class="muted small">{{ verdict['confidence'] }}% confident</span>
+  </div>
+  <ul class="reasons">
+    {% for r in verdict['reasons'] %}<li>{{ r }}</li>{% endfor %}
+  </ul>
+  <p class="muted small">Judged {{ verdict['created_at'] }} · source: {{ verdict['source'] }}</p>
+</section>
+{% endif %}
+
+<!-- deliverables history -->
+{% if deliverables %}
+<section class="card">
+  <h3>Deliverables ({{ deliverables|length }})</h3>
+  {% for d in deliverables %}
+    <div class="deliv">
+      <p>{{ d['description'] }}</p>
+      {% if d['link'] %}<p><a href="{{ d['link'] }}" target="_blank" rel="noopener">{{ d['link'] }}</a></p>{% endif %}
+      <p class="muted small">Submitted {{ d['submitted_at'] }}</p>
+    </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<p><a class="muted" href="{{ url_for('index') }}">← Back to all deals</a></p>
+{% endblock %}

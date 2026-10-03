@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}EscrowEase{% endblock %}
+{% block content %}
+<section class="hero card">
+  <h2>Hire freelancers without the trust problem.</h2>
+  <p class="muted">The client's payment is held in PayPal escrow. The freelancer delivers.
+  An <strong>AI referee</strong> checks the work against the brief — and only then is the money released.</p>
+  <a class="btn primary" href="{{ url_for('new_deal') }}">+ Create a deal</a>
+</section>
+
+<section class="card">
+  <h3>Deals</h3>
+  {% if deals %}
+    <div class="deal-list">
+    {% for d in deals %}
+      <a class="deal-row" href="{{ url_for('deal_detail', deal_id=d['id']) }}">
+        <div>
+          <div class="deal-title">{{ d['title'] }}</div>
+          <div class="muted small">{{ d['client_email'] }} → {{ d['freelancer_email'] }}</div>
+        </div>
+        <div class="deal-right">
+          <div class="amt">{{ "%.2f"|format(d['amount']) }} {{ d['currency'] }}</div>
+          <span class="status s-{{ d['status'] }}">{{ status_labels[d['status']] }}</span>
+        </div>
+      </a>
+    {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No deals yet — create the first one above.</p>
+  {% endif %}
+</section>
+
+<section class="card how">
+  <h3>How it works</h3>
+  <ol class="steps">
+    <li><strong>Client</strong> creates a deal and funds escrow — PayPal <em>authorizes</em> (holds) the amount.</li>
+    <li><strong>Freelancer</strong> submits the deliverable.</li>
+    <li><strong>AI referee</strong> compares the work against the brief and issues a verdict.</li>
+    <li><strong>Client</strong> releases payment (PayPal <em>captures</em>) — or refunds (PayPal <em>voids</em>).</li>
+  </ol>
+</section>
+{% endblock %}

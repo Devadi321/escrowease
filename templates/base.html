@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}EscrowEase{% endblock %} — AI-refereed freelance escrow</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<div class="app">
+  <header>
+    <a class="logo" href="{{ url_for('index') }}">
+      <div class="mark">⚖️</div>
+      <div>
+        <h1>EscrowEase</h1>
+        <p class="sub">freelance escrow with an AI referee &middot; PayPal sandbox</p>
+      </div>
+    </a>
+    {% if paypal_configured %}
+      <div class="pill ok">PayPal sandbox connected</div>
+    {% else %}
+      <div class="pill warn">Sandbox credentials not configured</div>
+    {% endif %}
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flashes">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+  <footer>EscrowEase · PayPal AI Hackathon prototype · sandbox only, no real money moves</footer>
+</div>
+</body>
+</html>

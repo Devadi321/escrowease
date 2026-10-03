@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Create a deal · EscrowEase{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h2>Create a deal</h2>
+  <form method="post" class="form">
+    <label>Deal title
+      <input name="title" required maxlength="120" placeholder="e.g. Landing page copy"
+             value="{{ form.get('title','') }}">
+    </label>
+    <label>Brief — exactly what the freelancer must deliver
+      <textarea name="brief" required rows="5"
+        placeholder="e.g. 800-word landing page for a dog-grooming startup. Must include: hero headline, 3 benefit sections, pricing table, FAQ with 5 questions. Tone: friendly.">{{ form.get('brief','') }}</textarea>
+    </label>
+    <div class="row2">
+      <label>Amount
+        <input name="amount" required inputmode="decimal" placeholder="150.00"
+               value="{{ form.get('amount','') }}">
+      </label>
+      <label>Currency
+        <input name="currency" maxlength="3" placeholder="USD"
+               value="{{ form.get('currency','USD') }}">
+      </label>
+    </div>
+    <label>Client email
+      <input name="client_email" type="email" required placeholder="client@example.com"
+             value="{{ form.get('client_email','') }}">
+    </label>
+    <label>Freelancer email
+      <input name="freelancer_email" type="email" required placeholder="freelancer@example.com"
+             value="{{ form.get('freelancer_email','') }}">
+    </label>
+    <button class="btn primary" type="submit">Create deal</button>
+    <a class="btn ghost" href="{{ url_for('index') }}">Cancel</a>
+  </form>
+</section>
+{% endblock %}
